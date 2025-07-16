@@ -237,12 +237,40 @@ elif st.session_state.page == "registrar_intervencion":
             conn.commit()
             st.success("Intervención registrada.")
             st.session_state.page = "home"
-
 elif st.session_state.page == "ver_estado":
     st.subheader("Estado Actual de Maquinaria")
     df = load_maquinaria()
     st.dataframe(df, use_container_width=True)
-
+    if not df.empty:
+        id_maquinaria = st.number_input("ID de la máquina a eliminar", min_value=df['id'].min(), max_value=df['id'].max(), step=1)
+        # Verificar si hay intervenciones asociadas
+        cursor.execute("SELECT COUNT(*) FROM intervenciones WHERE maquinaria_id = %s", (id_maquinaria,))
+        intervenciones_count = cursor.fetchone()[0]
+        if st.button("Eliminar Máquina", key="btn_eliminar"):
+            if st.session_state.get("confirm_eliminar", False):
+                if intervenciones_count > 0:
+                    if st.session_state.get("confirm_intervenciones", False):
+                        # Eliminar intervenciones asociadas primero
+                        cursor.execute("DELETE FROM intervenciones WHERE maquinaria_id = %s", (id_maquinaria,))
+                        cursor.execute("DELETE FROM maquinaria WHERE id = %s", (id_maquinaria,))
+                        conn.commit()
+                        st.success(f"Máquina con ID {id_maquinaria} y sus intervenciones eliminadas.")
+                        st.session_state.confirm_intervenciones = False
+                        st.session_state.confirm_eliminar = False
+                        st.rerun()  # Recarga la página
+                    else:
+                        st.warning(f"La máquina tiene {intervenciones_count} intervenciones. Haz clic de nuevo para eliminarla junto con sus intervenciones.")
+                        st.session_state.confirm_intervenciones = True
+                else:
+                    # Sin intervenciones, eliminar directamente
+                    cursor.execute("DELETE FROM maquinaria WHERE id = %s", (id_maquinaria,))
+                    conn.commit()
+                    st.success(f"Máquina con ID {id_maquinaria} eliminada.")
+                    st.session_state.confirm_eliminar = False
+                    st.rerun()  # Recarga la página
+            else:
+                st.warning("¿Estás seguro? Haz clic de nuevo para confirmar.")
+                st.session_state.confirm_eliminar = True
 elif st.session_state.page == "ver_pendientes":
     st.subheader("Pendientes de Mantenimiento")
     df = pd.read_sql_query("SELECT m.nombre, mt.tipo, mt.fecha_programada FROM mantenimiento mt JOIN maquinaria m ON mt.maquinaria_id = m.id WHERE mt.completado = FALSE", conn)
