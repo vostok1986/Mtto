@@ -83,8 +83,12 @@ CREATE TABLE IF NOT EXISTS intervenciones (
 conn.commit()
 
 # Función para cargar datos
+from sqlalchemy import create_engine
+
 def load_maquinaria():
-    return pd.read_sql_query("SELECT * FROM maquinaria", conn)
+    # Crear una conexión SQLAlchemy a partir de la URI de PostgreSQL
+    engine = create_engine(DATABASE_URL)
+    return pd.read_sql_query("SELECT * FROM maquinaria", engine)
 
 # Interfaz
 st.markdown('<div class="main">', unsafe_allow_html=True)
@@ -120,12 +124,16 @@ with col3:
 if st.session_state.page == "agregar_maquinaria":
     with st.form(key='agregar_maquinaria'):
         st.subheader("Agregar Nueva Maquinaria")
-        nombre = st.text_input("Nombre/ID de la maquinaria")
-        descripcion = st.text_input("Descripción")
-        estado = st.selectbox("Estado inicial", ["operativa", "no operativa"])
+        nombre = st.text_input("Nombre", help="Nombre alfanumérico de la máquina")
+        tipo = st.selectbox("Tipo", ["Lav", "Sec", "Cen", "SG", "Man"], help="Tipo de maquinaria")
+        capacidad = st.text_input("Capacidad", help="Valor numérico de capacidad")
+        unidad_medida = st.selectbox("Unidad de medida", ["LBS", "HP"], help="Unidad de capacidad")
         submit = st.form_submit_button("Agregar")
         if submit:
-            cursor.execute("INSERT INTO maquinaria (nombre, descripcion, estado) VALUES (%s, %s, %s)", (nombre, descripcion, estado))
+            cursor.execute("""
+                INSERT INTO maquinaria (nombre, tipo, capacidad, unidad_medida)
+                VALUES (%s, %s, %s, %s)
+            """, (nombre, tipo, capacidad, unidad_medida))
             conn.commit()
             st.success("Maquinaria agregada.")
             st.session_state.page = "home"

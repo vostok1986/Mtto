@@ -2,3 +2,4 @@ streamlit==1.33.0
 pandas
 psycopg2-binary
 streamlit-extras
+sqlalchemy
