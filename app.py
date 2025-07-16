@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Estilo CSS personalizado usando st.markdown
+# Estilo CSS personalizado
 st.markdown(
     """
     <style>
@@ -17,15 +17,15 @@ st.markdown(
     .icon-button {
         display: inline-block;
         margin: 10px;
-        padding: 15px 20px; /* Tamaño uniforme */
+        padding: 15px 20px;
         background-color: #4CAF50;
         color: white;
         border-radius: 5px;
         text-align: center;
         cursor: pointer;
-        font-size: 18px; /* Tamaño de texto uniforme */
-        width: 150px; /* Ancho fijo para uniformidad */
-        height: 60px; /* Altura fija para uniformidad */
+        font-size: 18px;
+        width: 150px;
+        height: 60px;
     }
     .icon-button:hover {
         background-color: #45a049;
@@ -46,12 +46,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Conectar a la base de datos de Supabase (Connection Pooler)
+# Conexión a Supabase
 DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql://postgres.ddduccrecwuedpdprnah:pK4ViLhZhplWcjdp@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 conn = psycopg2.connect(DATABASE_URL)
 cursor = conn.cursor()
 
-# Crear tablas si no existen
+# Crear tablas
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS maquinaria (
     id SERIAL PRIMARY KEY,
@@ -60,7 +60,6 @@ CREATE TABLE IF NOT EXISTS maquinaria (
     estado TEXT NOT NULL
 )
 ''')
-
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS mantenimiento (
     id SERIAL PRIMARY KEY,
@@ -71,7 +70,6 @@ CREATE TABLE IF NOT EXISTS mantenimiento (
     FOREIGN KEY (maquinaria_id) REFERENCES maquinaria(id)
 )
 ''')
-
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS intervenciones (
     id SERIAL PRIMARY KEY,
@@ -83,21 +81,19 @@ CREATE TABLE IF NOT EXISTS intervenciones (
     FOREIGN KEY (maquinaria_id) REFERENCES maquinaria(id)
 )
 ''')
-
 conn.commit()
 
 # Función para cargar datos
 def load_maquinaria():
     return pd.read_sql_query("SELECT * FROM maquinaria", conn)
 
-# Interfaz web con Streamlit
+# Interfaz
 st.markdown('<div class="main">', unsafe_allow_html=True)
-# Agregar logo (debes subirlo a GitHub en una carpeta 'assets')
 st.image("assets/logo_empresa.png", width=200, caption="Logo de la Empresa")
 st.title("Gestión de Maquinaria - Versión Web")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Botones con iconos en la pantalla principal
+# Botones con iconos
 col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("➕ Agregar Maquinaria", key="btn_add", help="Agregar una nueva máquina"):
@@ -117,7 +113,7 @@ with col3:
     if st.button("📊 Ver Hoja de Vida", key="btn_history", help="Ver hoja de vida de máquinas"):
         switch_page("ver_hoja_vida")
 
-# Páginas dinámicas usando switch_page
+# Páginas dinámicas
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
