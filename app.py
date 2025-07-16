@@ -1,5 +1,4 @@
 import streamlit as st
-from streamlit_extras.switch_page_button import switch_page
 import psycopg2
 import pandas as pd
 from datetime import datetime
@@ -93,30 +92,31 @@ st.image("assets/logo_empresa.png", width=200, caption="Logo de la Empresa")
 st.title("Gestión de Maquinaria - Versión Web")
 st.markdown('</div>', unsafe_allow_html=True)
 
+# Estado de la página
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
 # Botones con iconos
 col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("➕ Agregar Maquinaria", key="btn_add", help="Agregar una nueva máquina"):
-        switch_page("agregar_maquinaria")
+        st.session_state.page = "agregar_maquinaria"
     if st.button("🔧 Actualizar Estado", key="btn_update", help="Actualizar estado de una máquina"):
-        switch_page("actualizar_estado")
+        st.session_state.page = "actualizar_estado"
 with col2:
     if st.button("🛠️ Programar Mantenimiento", key="btn_schedule", help="Programar mantenimiento"):
-        switch_page("programar_mantenimiento")
+        st.session_state.page = "programar_mantenimiento"
     if st.button("📝 Registrar Intervención", key="btn_record", help="Registrar intervención"):
-        switch_page("registrar_intervencion")
+        st.session_state.page = "registrar_intervencion"
 with col3:
     if st.button("📋 Ver Estado", key="btn_view_state", help="Ver estado de máquinas"):
-        switch_page("ver_estado")
+        st.session_state.page = "ver_estado"
     if st.button("⏰ Ver Pendientes", key="btn_pendings", help="Ver mantenimientos pendientes"):
-        switch_page("ver_pendientes")
+        st.session_state.page = "ver_pendientes"
     if st.button("📊 Ver Hoja de Vida", key="btn_history", help="Ver hoja de vida de máquinas"):
-        switch_page("ver_hoja_vida")
+        st.session_state.page = "ver_hoja_vida"
 
 # Páginas dinámicas
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
 if st.session_state.page == "agregar_maquinaria":
     with st.form(key='agregar_maquinaria'):
         st.subheader("Agregar Nueva Maquinaria")
