@@ -4,61 +4,108 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Estilo CSS personalizado
+# Estilo CSS personalizado para responsive y profesional
 st.markdown(
     """
     <style>
+    /* Fondo principal y responsive */
     .main {
-        background-color: #f0f2f5;
+        background-color: #F5F5F5; /* Gris claro como base neutra */
         padding: 20px;
         border-radius: 10px;
-    }
-    .icon-button {
-        display: inline-block;
-        margin: 10px;
-        padding: 15px 20px;
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 5px;
-        text-align: center;
-        cursor: pointer;
-        font-size: 18px;
-        width: 150px;
-        height: 60px;
-    }
-    .icon-button:hover {
-        background-color: #45a049;
-    }
-    h1 {
-        color: #2c3e50;
-        text-align: center;
         font-family: 'Arial', sans-serif;
+        color: #333333; /* Texto principal oscuro */
     }
+    @media (max-width: 768px) {
+        .main {
+            padding: 10px;
+        }
+    }
+
+    /* Botones con estilo amarillo */
+    .stButton > button {
+        background-color: #FFD700; /* Amarillo dorado */
+        color: #333333; /* Texto oscuro para contraste */
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        border: none;
+    }
+    .stButton > button:hover {
+        background-color: #FFE066; /* Amarillo suave en hover */
+    }
+    @media (max-width: 768px) {
+        .stButton > button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    }
+
+    /* Títulos y texto */
+    h1 {
+        color: #004D80; /* Azul oscuro para headers */
+        text-align: center;
+        font-weight: bold;
+    }
+    .stSubheader {
+        color: #004D80;
+    }
+
+    /* Tablas responsive */
     .stDataFrame {
-        border: 1px solid #ddd;
+        border: 1px solid #808080; /* Gris medio */
         border-radius: 5px;
         padding: 10px;
-        background-color: #ffffff;
+        background-color: #FFFFFF; /* Blanco para cards */
+        overflow-x: auto; /* Scroll horizontal en móvil */
+    }
+    @media (max-width: 768px) {
+        .stDataFrame {
+            font-size: 14px;
+        }
+    }
+
+    /* Modo oscuro opcional */
+    .dark-mode {
+        background-color: #001F3F; /* Azul muy oscuro */
+        color: #FFFFFF; /* Texto claro */
+    }
+    .dark-mode .stButton > button {
+        background-color: #FFD700;
+        color: #001F3F;
+    }
+    .dark-mode .stButton > button:hover {
+        background-color: #FFE066;
+    }
+    .dark-mode h1, .dark-mode .stSubheader {
+        color: #00A0C0; /* Teal claro */
+    }
+    .dark-mode .stDataFrame {
+        background-color: #00264D;
+        border-color: #00A0C0;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Conexión a Supabase
+# Conectar a la base de datos de Supabase (Connection Pooler)
 DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql://postgres.ddduccrecwuedpdprnah:pK4ViLhZhplWcjdp@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 conn = psycopg2.connect(DATABASE_URL)
 cursor = conn.cursor()
 
-# Crear tablas
+# Crear tablas si no existen
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS maquinaria (
     id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL,
-    descripcion TEXT,
-    estado TEXT NOT NULL
+    tipo TEXT NOT NULL,
+    capacidad TEXT NOT NULL,
+    unidad_medida TEXT NOT NULL
 )
 ''')
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS mantenimiento (
     id SERIAL PRIMARY KEY,
@@ -69,6 +116,7 @@ CREATE TABLE IF NOT EXISTS mantenimiento (
     FOREIGN KEY (maquinaria_id) REFERENCES maquinaria(id)
 )
 ''')
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS intervenciones (
     id SERIAL PRIMARY KEY,
@@ -80,20 +128,26 @@ CREATE TABLE IF NOT EXISTS intervenciones (
     FOREIGN KEY (maquinaria_id) REFERENCES maquinaria(id)
 )
 ''')
+
 conn.commit()
 
 # Función para cargar datos
-from sqlalchemy import create_engine
-
 def load_maquinaria():
-    # Crear una conexión SQLAlchemy a partir de la URI de PostgreSQL
-    engine = create_engine(DATABASE_URL)
-    return pd.read_sql_query("SELECT * FROM maquinaria", engine)
+    return pd.read_sql_query("SELECT * FROM maquinaria", conn)
 
-# Interfaz
+# Interfaz web con Streamlit
 st.markdown('<div class="main">', unsafe_allow_html=True)
 st.image("assets/logo_empresa.png", width=200, caption="Logo de la Empresa")
-st.title("Gestión de Maquinaria - Versión Web")
+st.title("Mantenimiento VG")  # Cambio de título a "Mantenimiento VG"
+
+# Interruptor para modo oscuro
+dark_mode = st.checkbox("Activar modo oscuro", value=False)
+if dark_mode:
+    st.markdown('<style>.main { background-color: #001F3F; color: #FFFFFF; }</style>', unsafe_allow_html=True)
+    st.markdown('<style>.dark-mode { display: block; }</style>', unsafe_allow_html=True)
+else:
+    st.markdown('<style>.dark-mode { display: none; }</style>', unsafe_allow_html=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Estado de la página
@@ -204,7 +258,7 @@ elif st.session_state.page == "ver_hoja_vida":
     if not df.empty:
         total_costo = df['costo'].sum()
         st.write(f"**Total costos:** ${total_costo:.2f}")
-        st.bar_chart({"Costos": [total_costo]})  # Gráfico de costos
+        st.bar_chart({"Costos": [total_costo]})
 
 # Cerrar conexión
 conn.close()
