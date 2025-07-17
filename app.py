@@ -133,7 +133,8 @@ conn.commit()
 
 # Función para cargar datos
 def load_maquinaria():
-    return pd.read_sql_query("SELECT * FROM maquinaria", conn)
+    cursor.execute("SELECT nombre, tipo, capacidad, medida, estado FROM maquinaria")
+    return pd.DataFrame(cursor.fetchall(), columns=["Nombre", "Tipo", "Capacidad", "medida", "Estado"])
 
 # Interfaz web con Streamlit
 st.markdown('<div class="main">', unsafe_allow_html=True)
@@ -181,31 +182,34 @@ if st.session_state.page == "agregar_maquinaria":
         nombre = st.text_input("Nombre", help="Nombre alfanumérico de la máquina")
         tipo = st.selectbox("Tipo", ["Lav", "Sec", "Cen", "SG", "Man"], help="Tipo de maquinaria")
         capacidad = st.text_input("Capacidad", help="Valor numérico de capacidad")
-        unidad_medida = st.selectbox("Unidad de medida", ["LBS", "HP"], help="Unidad de capacidad")
+        unidad_medida = st.selectbox("medida", ["LBS", "HP"], help="Unidad de capacidad")
         submit = st.form_submit_button("Agregar")
         if submit:
             cursor.execute("""
-                INSERT INTO maquinaria (nombre, tipo, capacidad, unidad_medida)
+                INSERT INTO maquinaria (nombre, tipo, capacidad, medida)
                 VALUES (%s, %s, %s, %s)
-            """, (nombre, tipo, capacidad, unidad_medida))
+            """, (nombre, tipo, capacidad, medida))
             conn.commit()
             st.success("Maquinaria agregada.")
             st.session_state.page = "home"
-
 elif st.session_state.page == "actualizar_estado":
-    with st.form(key='actualizar_estado'):
-        st.subheader("Actualizar Estado de Maquinaria")
-        df = load_maquinaria()
-        st.dataframe(df, use_container_width=True)
-        id_maquinaria = st.number_input("ID de la maquinaria", min_value=1)
-        nuevo_estado = st.selectbox("Nuevo estado", ["operativa", "no operativa"])
-        submit = st.form_submit_button("Actualizar")
-        if submit:
-            cursor.execute("UPDATE maquinaria SET estado = %s WHERE id = %s", (nuevo_estado, id_maquinaria))
-            conn.commit()
-            st.success("Estado actualizado.")
-            st.session_state.page = "home"
-
+    st.subheader("Estado Actual de Maquinaria")
+    # Cargar datos sin mostrar ID
+    cursor.execute("SELECT nombre, tipo, capacidad, unidad_medida, estado FROM maquinaria")
+    df = pd.DataFrame(cursor.fetchall(), columns=["Nombre", "Tipo", "Capacidad", "Unidad de medida", "Estado"])
+    st.dataframe(df, use_container_width=True, hide_index=True)  # Oculta el índice
+    if not df.empty:
+        # Selector basado en nombres para una experiencia más amigable
+        nombres = df["Nombre"].tolist()
+        idx_maquinaria = st.selectbox("Selecciona una máquina", range(len(nombres)), format_func=lambda x: nombres[x])
+        if idx_maquinaria is not None:
+            maquina = df.iloc[idx_maquinaria].to_list()
+            nombre, tipo, capacidad, unidad_medida, estado = maquina
+            st.write(f"**Nombre:** {nombre}")
+            st.write(f"**Tipo:** {tipo}")
+            st.write(f"**Capacidad:** {capacidad}")
+            st.write(f"**medida:** {medida}")
+            st.write(f"**Estado:** {estado}")
 elif st.session_state.page == "programar_mantenimiento":
     with st.form(key='programar_mantenimiento'):
         st.subheader("Programar Mantenimiento")
